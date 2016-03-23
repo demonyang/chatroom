@@ -17,7 +17,7 @@ type Client struct {
 	quit  chan net.Conn
 	read   *bufio.Reader
 	write  *bufio.Writer
-	latesttime time.Time
+	lastact  time.Time
 }
 
 func NewClient(con net.Conn) *Client {
@@ -29,7 +29,7 @@ func NewClient(con net.Conn) *Client {
 		quit: make(chan net.Conn),
 		read: bufio.NewReader(con),
 		write: bufio.NewWriter(con),
-		latesttime: time.Now(),
+		lastact: time.Now(),
 	}
 	//listen
 	fmt.Printf("start listen\n")

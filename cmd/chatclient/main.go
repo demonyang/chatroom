@@ -18,11 +18,11 @@ func main() {
 		return
 	}
 	conn, err := net.Dial("tcp", *svr)
-	defer conn.Close()
 	if err != nil {
 		fmt.Errorf("connect to %v error, raason:%v", *svr, err.Error())
 		return
 	}
+	defer conn.Close()
 	client := chat.NewClient(conn)
 
 	in := bufio.NewReader(os.Stdin)

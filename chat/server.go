@@ -10,7 +10,7 @@ import (
 const (
     MAXWAIT = 10
 	SETNAMEFLAG = "setname:"
-	TIMEOUT = 60
+	TIMEOUT = 20
 )
 
 type Server struct {
@@ -45,6 +45,7 @@ func NewServer(addr string) (*Server, error) {
 		return nil, err
 	}
 	s.ListenEvent()
+	s.WatchLoop()
 	return s, nil
 }
 
@@ -61,6 +62,21 @@ func (s *Server) Run() {
 		fmt.Printf("client %v connected\n", conn.RemoteAddr().String())
 		s.join <- conn
 	}
+}
+
+// watch every client
+func (s *Server) WatchLoop() {
+	go func() {
+		for {
+			for conn, client := range s.client {
+				fmt.Printf("client last time:%v\n", client.lastact)
+				if int(time.Now().Sub(client.lastact).Seconds()) >= TIMEOUT {
+					s.removeFromClient(conn)
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
 }
 
 // listen kinds of events
@@ -109,25 +125,11 @@ func (s *Server) join2Client(conn net.Conn) {
 		}
 	}()
 
-	// timeo out control
-	go func() {
-	    for {
-			fmt.Printf("time is %v\n", client.latesttime)
-			interval := time.Now().Sub(client.latesttime).Seconds()
-			if int(interval) >= TIMEOUT {
-				s.removeFromClient(conn)
-			    break
-			}
-			time.Sleep(5 * time.Second)
-			continue
-		}
-	}()
-
 	// client send message
     go func() {
 	    for {
 		    msg := <-client.incoming
-			client.latesttime = time.Now()
+			client.lastact = time.Now()
 			if first {
 				if strings.HasPrefix(msg, SETNAMEFLAG) {
 					clientname := strings.Split(msg, ":")[1]
